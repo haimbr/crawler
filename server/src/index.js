@@ -6,7 +6,7 @@ const http = require('http');
 
 
 const { sendTaskToSqs } = require('./utils/queue');
-const { startWorkers, createTsk, controlTasks, endCrawlEvent } = require('./utils/task');
+const { startWorkers, createTsk, controlTasks, endCrawlEvent, sendUrlsToCrawler } = require('./utils/task');
 
 let users = [];
 
@@ -36,7 +36,7 @@ io.on('connection', (socket) => {
     socket.on('start-crawling', (result) => {
         console.log('start task');
         createTsk(socket.id, result.maxPages, result.maxDepth);
-        sendTaskToSqs(result.pageUrl, socket.id);
+        sendUrlsToCrawler([result.pageUrl], socket.id);
         startWorkers();
         socket.emit('message', socket.id);
     })

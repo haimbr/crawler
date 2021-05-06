@@ -22,8 +22,9 @@ const crawlDate = async (page, url) => {
         await page.goto(url);
         const result = await page.evaluate(() => {
             const anchors = [...document.querySelectorAll('a')];
-            const links = [...new Set(anchors.map(url => url.href).filter(link => link.includes('http')))];
-            const title = document.querySelector('title').innerText;
+            const links = [...new Set(anchors.map(url => url.href))];
+            // const links = [...new Set(anchors.map(url => url.href).filter(link => link.includes('http')))];
+            const title = document.querySelector('title')?.innerText;
             return { links, title };
         });
         return result;

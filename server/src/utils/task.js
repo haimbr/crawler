@@ -35,24 +35,23 @@ const crawlNextLevel = (task, taskId) => {
     task.pagesInNextLevel = newUrls;
     task.pagesInNextLevel.length = Math.min(task.pagesInNextLevel.length, task.maxPages - Object.keys(task.crawledPages).length);
     task.numOfPagesSentToCrawler += task.pagesInNextLevel.length;
-    task.currentDepth++;
     if (isTaskCompleted(task)) {
-        endCrawlEvent.emit('endCrawling',{ taskId, task });
+        endCrawlEvent.emit('endCrawling', { taskId, task });
         return console.log('done end');
     }
-    sendLinksToCrawler(task, taskId);
+    task.currentDepth++;
+    sendUrlsToCrawler(task.pagesInNextLevel, taskId);
 }
 
 
-const sendLinksToCrawler = (task, taskId) => {
-
-    task.pagesInNextLevel.forEach((link, index) => {
-        if (redisCache[link] !== undefined) {
+const sendUrlsToCrawler = (urls, taskId) => {
+    urls.forEach((url) => {
+        if (redisCache[url] !== undefined) {
             console.log('cache')
-            controlTasks({ url: link, ...redisCache[link] }, taskId)
+            controlTasks({ url, ...redisCache[url] }, taskId)
         } else {
             console.log('sqs')
-            sendTaskToSqs(link, taskId)
+            sendTaskToSqs(url, taskId)
         }
     })
 }
@@ -61,12 +60,12 @@ const sendLinksToCrawler = (task, taskId) => {
 
 
 const controlTasks = (page, taskId) => {
+
     const currentTask = tasks[taskId];
     currentTask.crawledPages[page.url] = { title: page.title, links: page.links, depth: currentTask.currentDepth };
     redisCache[page.url] = { title: page.title, links: page.links };
-
     currentTask.pagesInNextLevel.push(...page.links);
-
+    endCrawlEvent.emit('endCrawling', { taskId, page: currentTask.crawledPages[page.url] });
     // checks whether all pages at current depth have been crawled by checking if all tasks sent to sqs have returned
     if (Object.keys(currentTask.crawledPages).length === currentTask.numOfPagesSentToCrawler) {
         crawlNextLevel(currentTask, taskId);
@@ -87,5 +86,5 @@ const startWorkers = () => {
 }
 
 
-module.exports = { startWorkers, createTsk, controlTasks, endCrawlEvent }
+module.exports = { startWorkers, createTsk, controlTasks, endCrawlEvent, sendUrlsToCrawler }
 
