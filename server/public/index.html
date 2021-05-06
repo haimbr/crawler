@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <header>
+        <h1>crawler</h1>
+    </header>
+
+    <div class="main-content">
+        <div class="crawling-progress_container">
+            <img src="/img/crawler.gif" alt="crawler-gif">
+        </div>
+        <div class="input-container">
+            <input type="text" name="url" id="url" placeholder="please enter url" required />
+            <input type="number" name="max-pages" id="max-pages" placeholder="max pages to crawling" min="1" max="200"
+                required />
+            <input type="number" name="max-depth" id="max-depth" placeholder="max depth to crawling" min="1" max="100"
+                required />
+            <button id="start-crawling">start crawling</button>
+        </div>
+    </div>
+    <script src="socket.io/socket.io.js"></script>
+    <script src="/js/main.js"></script>
+</body>
+
+</html>
