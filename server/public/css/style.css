@@ -1,43 +1,88 @@
-*{
-    margin: 0px;
-    box-sizing: border-box;
+* {
+  margin: 0px;
+  box-sizing: border-box;
 }
 
-
-header{
-    background-color: #00000054;
-    text-align: center;
+header {
+  background-color: #00000054;
+  text-align: center;
 }
 
 header h1 {
-    padding: 20px;
-    font-size: 3rem;
+  padding: 20px;
+  font-size: 3rem;
 }
 
-
-.main-content{
-    text-align: center;
+.main-content {
+  text-align: center;
 }
-.input-container{
-    margin: 30px;
-    font-size: 3rem;
-}
-
-.input-container input{
-    height: 40px;
-    vertical-align: text-bottom;
-    width: 200px;
+.input-container {
+  margin: 30px;
+  font-size: 3rem;
 }
 
-.input-container input[type=text]{
-    width: 300px;
+.input-container input {
+  height: 40px;
+  vertical-align: text-bottom;
+  width: 200px;
 }
 
-
-.input-container button{
-    cursor: pointer;
-    height: 40px;
-    vertical-align: text-bottom;
+.input-container input[type="text"] {
+  width: 300px;
 }
 
+.input-container button {
+  cursor: pointer;
+  height: 40px;
+  vertical-align: text-bottom;
+}
 
+.crawling-progress_container {
+  background-color: #3f3f3d;
+  display: none;
+}
+
+.crawling-progress_container span {
+  display: inline-block;
+  text-align: center;
+  margin: 0px 10px;
+  color: white;
+}
+
+table,
+th,
+td {
+  border: 1px solid black;
+}
+
+td {
+  max-width: 35vw;
+  overflow: hidden;
+}
+
+td:nth-child(4){
+  text-align: center;
+}
+
+.results-table {
+  display: none;
+  height: 80vh;
+  overflow-y: auto;
+  margin: 20px;
+}
+
+.results-table table {
+  width: 100%;
+}
+
+.results-table table ul {
+  display: inline-block;
+  max-height: 10vh;
+  overflow-y: scroll;
+  padding-left: 25px;
+  width: 100%;
+}
+
+.results-table table li{
+  overflow-x: hidden;
+}

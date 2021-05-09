@@ -1,9 +1,9 @@
 const puppeteer = require('puppeteer');
 const axios = require('axios');
-
 const { getTasksFromSqs, deleteTasksFromSqs } = require('./sqs')
 
 
+let isWorkerRunning = false;
 
 const sendResultsToServer = async (data) => {
     const URL = 'http://localhost:3000/crawled-pages';
@@ -22,27 +22,25 @@ const crawlDate = async (page, url) => {
         await page.goto(url);
         const result = await page.evaluate(() => {
             const anchors = [...document.querySelectorAll('a')];
-            const links = [...new Set(anchors.map(url => url.href))];
-            // const links = [...new Set(anchors.map(url => url.href).filter(link => link.includes('http')))];
+            const links = [...new Set(anchors.map(url => url.href).filter(link => link.includes('http')))];
             const title = document.querySelector('title')?.innerText;
             return { links, title };
         });
         return result;
     } catch (err) {
-        console.log(err)
-        return { links: [], title: 'broken link' };
+        return { links: [], title: 'broken link' }; 
     }
 }
 
 const crawlerFunc = async () => {
+    isWorkerRunning = true;
     let tasks = await getTasksFromSqs();
     if (tasks.length === 0){
         tasks = await getTasksFromSqs();
-        console.log(tasks);
-        if (tasks.length === 0) return;
+        if (tasks.length === 0){
+            return isWorkerRunning = false;
+        };
     }
-
-    console.log(tasks)
 
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
@@ -59,4 +57,4 @@ const crawlerFunc = async () => {
 
 
 
-module.exports = { crawlerFunc };
+module.exports = { crawlerFunc, isWorkerRunning };

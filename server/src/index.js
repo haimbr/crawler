@@ -4,9 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const http = require('http');
 
-
-const { sendTaskToSqs } = require('./utils/queue');
-const { startWorkers, createTsk, controlTasks, endCrawlEvent, sendUrlsToCrawler } = require('./utils/task');
+const { startWorkers, createTsk, endCrawlEvent, sendUrlsToCrawler, controlTasks } = require('./utils/task');
 
 let users = [];
 
@@ -28,39 +26,24 @@ io.on('connection', (socket) => {
 
     endCrawlEvent.on('endCrawling', result => {
         if (result.taskId === socket.id) {
-            console.log('end Crawling');
-            socket.emit('message', result);
+            socket.emit('new-result', result.data);
         }
     });
- 
+
     socket.on('start-crawling', (result) => {
-        console.log('start task');
         createTsk(socket.id, result.maxPages, result.maxDepth);
         sendUrlsToCrawler([result.pageUrl], socket.id);
         startWorkers();
-        socket.emit('message', socket.id);
     })
 });
-
-
-
-
-
-app.post('/crawl-url', (req, res) => {
-    createTsk(req.query.id, req.query.maxPages, req.query.maxDepth);
-    console.log(req.query.pageUrl)
-    sendTaskToSqs(req.query.pageUrl, req.query.id);
-    startWorkers();
-    res.send('bla bla');
-});
-
+ 
 
 app.post('/crawled-pages', (req, res) => {
-    console.log('new page from worker')
     controlTasks(req.body.data.data, req.body.data.taskId);
-    res.send('bla bla2');
+    res.send();
 });
 
+ 
 
 server.listen(port, () => console.log('listening on port' + port));
 

@@ -11,7 +11,6 @@ const sqs = new AWS.SQS({
 
 
 const sendTaskToSqs = async (pageUrl, taskId) => {
-    console.log('send Task To Sqs')
     try {
         await sqs.sendMessage({
             QueueUrl: QUEUE_URL,

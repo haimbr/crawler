@@ -3,54 +3,52 @@ const { sendTaskToSqs } = require('./queue');
 const EventEmitter = require('events')
 EventEmitter.prototype._maxListeners = 100;
 const endCrawlEvent = new EventEmitter();
+const redisClient = require('../../db/redis');
 
 const tasks = {};
-const redisCache = {};
 const workers = ['http://localhost:3030/start-crawling'];
 
 
 
-
 const createTsk = (id, maxPages, maxDepth) => {
-    console.log('Creating task')
     tasks[id] = {
         maxPages: parseInt(maxPages),
         maxDepth: parseInt(maxDepth),
         crawledPages: {},
         numOfPagesSentToCrawler: 1,
-        pagesInNextLevel: [],
+        pagesInNextLayer: [],
         currentDepth: 0
     }
 }
 
 
+
 const isTaskCompleted = (task) => {
-    return Object.keys(task.crawledPages).length === task.maxPages
-        || task.currentDepth === task.maxDepth
-        || Object.keys(task.pagesInNextLevel).length === 0;
+    return Object.keys(task.crawledPages).length >= task.maxPages
+        || task.currentDepth >= task.maxDepth
+        || Object.keys(task.pagesInNextLayer).length === 0;
 }
 
-const crawlNextLevel = (task, taskId) => {
-    const newUrls = task.pagesInNextLevel.filter((url) => task.crawledPages[url] === undefined)
-    task.pagesInNextLevel = newUrls;
-    task.pagesInNextLevel.length = Math.min(task.pagesInNextLevel.length, task.maxPages - Object.keys(task.crawledPages).length);
-    task.numOfPagesSentToCrawler += task.pagesInNextLevel.length;
+
+const crawlNextLayer = async (task, taskId) => {
+    const newUrls = task.pagesInNextLayer.filter((url) => task.crawledPages[url] === undefined)
+    task.pagesInNextLayer = newUrls;
+    task.pagesInNextLayer.length = Math.min(task.pagesInNextLayer.length, task.maxPages - Object.keys(task.crawledPages).length);
+    task.numOfPagesSentToCrawler += task.pagesInNextLayer.length;
     if (isTaskCompleted(task)) {
-        endCrawlEvent.emit('endCrawling', { taskId, task });
-        return console.log('done end');
+        return endCrawlEvent.emit('endCrawling', { taskId, data: { endTask: true } });
     }
     task.currentDepth++;
-    sendUrlsToCrawler(task.pagesInNextLevel, taskId);
+    sendUrlsToCrawler(task.pagesInNextLayer, taskId);
 }
 
 
-const sendUrlsToCrawler = (urls, taskId) => {
-    urls.forEach((url) => {
-        if (redisCache[url] !== undefined) {
-            console.log('cache')
-            controlTasks({ url, ...redisCache[url] }, taskId)
+const sendUrlsToCrawler = async (urls, taskId) => {
+    urls.forEach(async (url) => {
+        const redisCache = await getPageFromRedis(url);
+        if (redisCache) {
+            controlTasks({ url, ...redisCache }, taskId)
         } else {
-            console.log('sqs')
             sendTaskToSqs(url, taskId)
         }
     })
@@ -59,23 +57,22 @@ const sendUrlsToCrawler = (urls, taskId) => {
 
 
 
-const controlTasks = (page, taskId) => {
-
+const controlTasks = async (page, taskId) => {
     const currentTask = tasks[taskId];
     currentTask.crawledPages[page.url] = { title: page.title, links: page.links, depth: currentTask.currentDepth };
-    redisCache[page.url] = { title: page.title, links: page.links };
-    currentTask.pagesInNextLevel.push(...page.links);
-    endCrawlEvent.emit('endCrawling', { taskId, page: currentTask.crawledPages[page.url] });
+    sendPageToRedis(page.url, { links: page.links, title: page.title })
+    currentTask.pagesInNextLayer.push(...page.links);
+    endCrawlEvent.emit('endCrawling', { taskId, data: { ...page, depth: currentTask.currentDepth } });
+
     // checks whether all pages at current depth have been crawled by checking if all tasks sent to sqs have returned
     if (Object.keys(currentTask.crawledPages).length === currentTask.numOfPagesSentToCrawler) {
-        crawlNextLevel(currentTask, taskId);
+        crawlNextLayer(currentTask, taskId);
     }
 }
 
 
 
 const startWorkers = () => {
-    console.log('Start workers')
     workers.forEach(async (workerUrl) => {
         try {
             await axios.get(workerUrl);
@@ -85,6 +82,24 @@ const startWorkers = () => {
     })
 }
 
+
+
+const getPageFromRedis = async (url) => {
+    try {
+        return JSON.parse(await redisClient.getAsync("search:" + url));
+    } catch (err) {
+        console.log(err);
+    }
+}
+
+
+const sendPageToRedis = async (url, data) => {
+    redisClient.setexAsync(
+        "search:" + url,
+        60 * 20,
+        JSON.stringify(data)
+    );
+}
 
 module.exports = { startWorkers, createTsk, controlTasks, endCrawlEvent, sendUrlsToCrawler }
 

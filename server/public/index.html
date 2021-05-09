@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <link rel="stylesheet" href="css/style.css">
+    <title>crawler</title>
 </head>
 
 <body>
@@ -16,6 +17,8 @@
     <div class="main-content">
         <div class="crawling-progress_container">
             <img src="/img/crawler.gif" alt="crawler-gif">
+            <span class="current-depth"><h4>current depth</h4><p>0</p></span>
+            <span class="crawled-pages"><h4>crawled pages</h4><p>0</p></span>
         </div>
         <div class="input-container">
             <input type="text" name="url" id="url" placeholder="please enter url" required />
@@ -25,6 +28,16 @@
                 required />
             <button id="start-crawling">start crawling</button>
         </div>
+    </div>
+    <div class="results-table">
+        <table>
+            <tr>
+              <th>url</th>
+              <th>links</th>
+              <th>title</th>
+              <th>depth</th>
+            </tr>
+          </table>
     </div>
     <script src="socket.io/socket.io.js"></script>
     <script src="/js/main.js"></script>

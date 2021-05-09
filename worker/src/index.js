@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { crawlerFunc } = require('./utils/crawl');
+const { crawlerFunc, isWorkerRunning } = require('./utils/crawl');
 
 const port = process.env.PORT;
 
@@ -13,14 +13,15 @@ app.use(express.json());
 
 
 app.get('/start-crawling', (req, res) => {
-    console.log('start-crawling req')
-    crawlerFunc();
-    res.send("bla bla");
-})
+    if(!isWorkerRunning){
+        crawlerFunc();
+    }
+    res.send();
+}) 
 
 app.listen(port, () => console.log('listening on port' + port));
 
-
+ 
 
 
 
