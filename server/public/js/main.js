@@ -8,37 +8,53 @@ const resultsTable = document.querySelector('.results-table');
 const currentDepth = document.querySelector('.current-depth p');
 const crawledPages = document.querySelector('.crawled-pages p');
 
+const resultsTree = {};
+let pagesInCurrentDepth = {};
+let pagesInNextDepth = {};
+let count = 0;//** */
+const urls = {}; // ***
 
 
 
 socket.on('new-result', (data) => {
-    if(data.endTask){
-        setTimeout(()=>{
-            alert('ended crawling')
-        },100)
-        startCrawlingButton.disabled = false;
-    }else{
-        crawledPages.innerText++;
-        currentDepth.innerText = data.depth;
-        createNewRow(data);
-    }
+    console.log(data, count++);
+    console.log(pagesInCurrentDepth);
+    urls[data.url] = true;
+    const currentUrl = pagesInCurrentDepth[data.url];
+    currentUrl.title = data.title;
+    currentUrl.depth = data.depth;
+    currentUrl.links = [];
+    data.links.forEach((link) => {
+        if(!pagesInNextDepth[link]) pagesInNextDepth[link] = { url: link };
+        currentUrl.links.push(pagesInNextDepth[link]);
+    })
 })
 
 
+socket.on('start-crawling-next-depth', (data) => {
+    console.log('start-crawling-next-depth');
+    pagesInCurrentDepth = pagesInNextDepth;
+    pagesInNextDepth = {};
+})
 
+socket.on('end-crawling', (data) => {
+    console.log('end-crawling');
+})
 
 startCrawlingButton.addEventListener('click', async () => {
     const pageUrl = document.querySelector('#url').value;
     const maxDepth = document.querySelector('#max-depth').value;
     const maxPages = document.querySelector('#max-pages').value;
     if (pageUrl && maxDepth && maxPages) {
+        resultsTree.root = { url: pageUrl };
+        pagesInCurrentDepth[pageUrl] = resultsTree.root;
         socket.emit('start-crawling', { pageUrl, maxPages, maxDepth })
         updateUiWhenStartCrawling();
     }
 })
 
 
-function updateUiWhenStartCrawling(){
+function updateUiWhenStartCrawling() {
     startCrawlingButton.disabled = true;
     crawlingProgress.style.display = 'block';
     resultsTable.style.display = 'block';
@@ -52,12 +68,12 @@ function createNewRow(data) {
     const newRow = createElement('tr', table);
     for (let key in data) {
         const TdElement = createElement('td', newRow)
-        if(key === 'links'){
-            const ulElement = createElement('ul',TdElement )
-            data[key].forEach((link) =>{
-                createElement('li',ulElement, link )
+        if (key === 'links') {
+            const ulElement = createElement('ul', TdElement)
+            data[key].forEach((link) => {
+                createElement('li', ulElement, link)
             })
-        }else{
+        } else {
             TdElement.innerText = decodeURI(data[key]);
         }
     }
@@ -67,7 +83,7 @@ function createNewRow(data) {
 function createElement(element, parent, data) {
     const newElement = document.createElement(element);
     parent.appendChild(newElement);
-    if(data){
+    if (data) {
         newElement.innerText = decodeURI(data);
     }
     return newElement;
@@ -75,9 +91,9 @@ function createElement(element, parent, data) {
 
 
 
-function clearTable(){
+function clearTable() {
     let trElementsArr = resultsTable.querySelectorAll('tr')
-    for(let i=1; i<trElementsArr.length; i++){
+    for (let i = 1; i < trElementsArr.length; i++) {
         trElementsArr[i].remove();
     }
 }

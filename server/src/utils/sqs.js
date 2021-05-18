@@ -10,7 +10,7 @@ const sqs = new AWS.SQS({
 })
 
 
-const sendTaskToSqs = async (pageUrl, taskId) => {
+const sendUrlToSqs = async (taskId, position, pageUrl) => {
     try {
         await sqs.sendMessage({
             QueueUrl: QUEUE_URL,
@@ -18,6 +18,10 @@ const sendTaskToSqs = async (pageUrl, taskId) => {
                 "taskId": {
                     DataType: "String",
                     StringValue: taskId
+                },
+                "positionInCurrentDepth": {
+                    DataType: "String",
+                    StringValue: position.toString(),
                 },
             },
             MessageBody: pageUrl
@@ -29,4 +33,4 @@ const sendTaskToSqs = async (pageUrl, taskId) => {
 
 
 
-module.exports = { sendTaskToSqs }
+module.exports = { sendUrlToSqs }
