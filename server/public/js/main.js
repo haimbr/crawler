@@ -8,92 +8,117 @@ const resultsTable = document.querySelector('.results-table');
 const currentDepth = document.querySelector('.current-depth p');
 const crawledPages = document.querySelector('.crawled-pages p');
 
-const resultsTree = {};
-let pagesInCurrentDepth = {};
-let pagesInNextDepth = {};
-let count = 0;//** */
-const urls = {}; // ***
+
+const urls = {};
 
 
 
 socket.on('new-result', (data) => {
-    console.log(data, count++);
-    console.log(pagesInCurrentDepth);
-    urls[data.url] = true;
-    const currentUrl = pagesInCurrentDepth[data.url];
-    currentUrl.title = data.title;
-    currentUrl.depth = data.depth;
-    currentUrl.links = [];
-    data.links.forEach((link) => {
-        if(!pagesInNextDepth[link]) pagesInNextDepth[link] = { url: link };
-        currentUrl.links.push(pagesInNextDepth[link]);
-    })
+    crawledPages.innerText++;
+    currentDepth.innerText = data.depth;
+    urls[data.url] = data;
+    if (resultsTable.children.length === 1) {
+        createNode(data, 0);
+    }
 })
 
 
-socket.on('start-crawling-next-depth', (data) => {
-    console.log('start-crawling-next-depth');
-    pagesInCurrentDepth = pagesInNextDepth;
-    pagesInNextDepth = {};
-})
 
 socket.on('end-crawling', (data) => {
-    console.log('end-crawling');
+    alert('end crawling')
+    startCrawlingButton.disabled = false;
 })
 
-startCrawlingButton.addEventListener('click', async () => {
-    const pageUrl = document.querySelector('#url').value;
-    const maxDepth = document.querySelector('#max-depth').value;
-    const maxPages = document.querySelector('#max-pages').value;
-    if (pageUrl && maxDepth && maxPages) {
-        resultsTree.root = { url: pageUrl };
-        pagesInCurrentDepth[pageUrl] = resultsTree.root;
-        socket.emit('start-crawling', { pageUrl, maxPages, maxDepth })
-        updateUiWhenStartCrawling();
+
+
+const createNode = (data, depth) => {
+    const container = createElement('div', resultsTable, undefined, 'node-container');
+    // add x-icon if this is not the first node
+    if (document.querySelectorAll('.node-container').length !== 1) {
+        const icon = createElement('span', container, 'X', 'x-icon');
+        icon.addEventListener('click', (event) => clearOtherChildren(event.target.parentNode.previousElementSibling));
     }
-})
+
+    createElement('h3', container, `url: ${decodeURI(data.url)}`);
+    createElement('h3', container, `title: ${data.title}`);
+    createElement('h3', container, `depth: ${depth}`);
+    const linksButton = createElement('h3', container, 'links', 'links-button');
+    const urlsList = createElement('ul', container, undefined, 'links-list');
+    data.links.forEach((link) => {
+        createElement('li', urlsList, decodeURI(link), 'link');
+    });
 
 
-function updateUiWhenStartCrawling() {
-    startCrawlingButton.disabled = true;
-    crawlingProgress.style.display = 'block';
-    resultsTable.style.display = 'block';
-    currentDepth.innerText = 0;
-    crawledPages.innerText = 0;
-    clearTable();
-}
-
-function createNewRow(data) {
-    const table = document.querySelector('.results-table table');
-    const newRow = createElement('tr', table);
-    for (let key in data) {
-        const TdElement = createElement('td', newRow)
-        if (key === 'links') {
-            const ulElement = createElement('ul', TdElement)
-            data[key].forEach((link) => {
-                createElement('li', ulElement, link)
-            })
+    linksButton.addEventListener('click', () => {
+        if (urlsList.style.display === 'inline-block') {
+            urlsList.style.display = 'none'
         } else {
-            TdElement.innerText = decodeURI(data[key]);
+            urlsList.style.display = 'inline-block'
         }
+    });
+    [...urlsList.children].forEach((element) => {
+        element.addEventListener('click', (event) => {
+            onClickUrl(event);
+        });
+    });
+    window.scrollTo(0, document.body.scrollHeight);
+};
+
+
+const clearOtherChildren = (node) => {
+    while (node.nextElementSibling?.classList.contains('node-container')) {
+        node.nextElementSibling.remove();
     }
 }
 
+const onClickUrl = (event) => {
+    const depth = document.querySelectorAll('.node-container').length;
+    if (urls[event.target.innerText] && depth <= document.querySelector('#max-depth').value) {
+        clearOtherChildren(event.target.parentNode.parentNode);
+        createNode(urls[event.target.innerText], depth);
+    } else {
+        alert('this url has not been crawled');
+    }
+}
 
-function createElement(element, parent, data) {
+function createElement(element, parent, data, className) {
     const newElement = document.createElement(element);
     parent.appendChild(newElement);
     if (data) {
-        newElement.innerText = decodeURI(data);
+        newElement.innerText = data;
+    } if (className) {
+        newElement.classList.add(className);
     }
     return newElement;
 }
 
 
 
-function clearTable() {
-    let trElementsArr = resultsTable.querySelectorAll('tr')
-    for (let i = 1; i < trElementsArr.length; i++) {
-        trElementsArr[i].remove();
+
+startCrawlingButton.addEventListener('click', async () => {
+    const pageUrl = document.querySelector('#url').value;
+    const maxDepth = document.querySelector('#max-depth').value;
+    const maxPages = document.querySelector('#max-pages').value;
+    if (pageUrl && maxDepth && maxPages) {
+        socket.emit('start-crawling', { pageUrl, maxPages, maxDepth })
+        updateUiWhenStartCrawling(pageUrl);
     }
+})
+
+
+function updateUiWhenStartCrawling(url) {
+    while (resultsTable.firstChild) {
+        resultsTable.firstChild.remove();
+    };
+    startCrawlingButton.disabled = true;
+    crawlingProgress.style.display = 'block';
+    resultsTable.style.display = 'block';
+    currentDepth.innerText = 0;
+    crawledPages.innerText = 0;
+    const container = document.querySelector('.results-table');
+    createElement('h1', container, url, 'root-url');
 }
+
+
+
+

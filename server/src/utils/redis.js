@@ -9,7 +9,7 @@ const getDataFromRedis = async (key) => {
     } catch (err) {
         console.log(err);
     }
-}
+} 
 
 
 const saveTaskInRedis = async (taskId, data) => {
@@ -20,8 +20,8 @@ const saveTaskInRedis = async (taskId, data) => {
 const savePageInRedis = async (url, data) => {
     redisClient.setexAsync(
         "search:" + url,
-        60 * 20,
-        // 20,
+        // 60 * 20,
+        20,
         JSON.stringify(data)
     );
 }

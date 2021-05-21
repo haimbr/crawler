@@ -49,40 +49,51 @@ header h1 {
   color: white;
 }
 
-table,
-th,
-td {
+.root-url {
+  margin: auto;
+  width: 800px;
+}
+
+.node-container {
+  position: relative;
   border: 1px solid black;
+  width: 800px;
+  margin: 25px auto;
 }
 
-td {
-  max-width: 35vw;
-  overflow: hidden;
+.node-container span {
+  position: absolute;
+  left: -30px;
+  top: -10px;
+  font-size: 30px;
+  font-weight: bold;
+  font-family: cursive;
+  cursor: pointer;
 }
 
-td:nth-child(4){
-  text-align: center;
+.node-container h3 {
+  margin: 6px 0px;
 }
 
-.results-table {
+.links-list {
   display: none;
-  height: 80vh;
-  overflow-y: auto;
-  margin: 20px;
-}
-
-.results-table table {
-  width: 100%;
-}
-
-.results-table table ul {
-  display: inline-block;
-  max-height: 10vh;
+  max-height: 250px;
   overflow-y: scroll;
-  padding-left: 25px;
-  width: 100%;
+  width: 650px;
+  overflow-x: hidden;
+  border: 1px solid;
 }
 
-.results-table table li{
-  overflow-x: hidden;
+.links-list li {
+  color: blue;
+  cursor: pointer;
+}
+
+.links-button {
+  cursor: pointer;
+}
+.links-button::before {
+  content: "→ ";
+  font-size: 20px;
+  padding: 0px 4px;
 }
