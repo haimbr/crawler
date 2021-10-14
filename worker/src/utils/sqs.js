@@ -16,7 +16,7 @@ const getTasksFromSqs = async () => {
                 "All"
             ],
             VisibilityTimeout: 80,
-            WaitTimeSeconds: 15
+            WaitTimeSeconds: 20
         }).promise();
         return Messages || [];
     } catch (err) {

@@ -7,7 +7,7 @@ let isWorkerRunning = false;
 
 const sendResultsToServer = async (attributes, url, pageData) => {
     const URL = 'http://localhost:3000/crawled-pages';
-    
+
     try {
         await axios.post(URL, {
             taskId: attributes.taskId.StringValue,
@@ -43,23 +43,22 @@ const crawlDate = async (URL) => {
 
 const startCrawling = async () => {
     isWorkerRunning = true;
-    let tasks = await getTasksFromSqs();
-    if (tasks.length === 0) {
-        tasks = await getTasksFromSqs();
+
+    while (isWorkerRunning) {
+        let tasks = await getTasksFromSqs();
+        
         if (tasks.length === 0) {
             return isWorkerRunning = false;
-        };
+        }
+        for (let i = 0; i < tasks.length; i++) {
+            let result = await crawlDate(tasks[i].Body);
+            sendResultsToServer(tasks[i].MessageAttributes, tasks[i].Body, result);
+            deleteTasksFromSqs(tasks[i])
+        }
     }
-
-    for (let i = 0; i < tasks.length; i++) {
-        let result = await crawlDate(tasks[i].Body);
-        sendResultsToServer(tasks[i].MessageAttributes, tasks[i].Body, result);
-        deleteTasksFromSqs(tasks[i])
-    }
-    startCrawling();
 }
 
 
 
 
-module.exports = { startCrawling , isWorkerRunning };
+module.exports = { startCrawling, isWorkerRunning };
